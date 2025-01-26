@@ -65,6 +65,10 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 	})
 
+	// Prepare light controller
+	lightController := light.NewLightController(18, 380, 255)
+	lightController.Initialize()
+
 	// API: Trigger light test
 	http.HandleFunc("/api/test-lights", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -77,7 +81,7 @@ func main() {
 			return
 		}
 
-		light.TestLights()
+		lightController.TestLights()
 
 		w.WriteHeader(http.StatusOK)
 	})

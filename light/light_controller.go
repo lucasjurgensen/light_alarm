@@ -28,6 +28,59 @@ var (
 	BLACK = [3]uint8{0, 0, 0}
 )
 
+type LightController struct {
+	pin        int
+	numLeds    int
+	brightness uint8
+	device     *ws2811.WS2811
+}
+
+// NewLightController creates a new light controller instance
+func NewLightController(pin int, numLeds int, brightness uint8) *LightController {
+	return &LightController{
+		pin:        pin,
+		numLeds:    numLeds,
+		brightness: brightness,
+		device:     nil,
+	}
+}
+
+// Initialize sets up the LED device
+func (lc *LightController) Initialize() (*ws2811.WS2811, error) {
+	opts := ws2811.DefaultOptions
+	opts.Channels[0].GpioPin = lc.pin
+	opts.Channels[0].LedCount = lc.numLeds
+	opts.Channels[0].Brightness = int(lc.brightness) // Convert uint8 to int
+
+	dev, err := ws2811.MakeWS2811(&opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create WS2811: %v", err)
+	}
+
+	if err := dev.Init(); err != nil {
+		return nil, fmt.Errorf("failed to initialize WS2811: %v", err)
+	}
+
+	lc.device = dev
+
+	return dev, nil
+}
+
+// SetColor sets all LEDs to the specified color
+func (lc *LightController) SetColor(dev *ws2811.WS2811, color [3]uint8) error {
+	for i := 0; i < lc.numLeds; i++ {
+		// Convert RGB to uint32 color value
+		colorVal := uint32(color[0])<<16 | uint32(color[1])<<8 | uint32(color[2])
+		dev.Leds(0)[i] = colorVal
+	}
+	return dev.Render()
+}
+
+// Clear turns off all LEDs
+func (lc *LightController) Clear(dev *ws2811.WS2811) error {
+	return lc.SetColor(dev, BLACK)
+}
+
 // Add a mutex to prevent multiple simultaneous tests
 var testMutex sync.Mutex
 var isRunning bool
@@ -43,7 +96,7 @@ func CancelTest() {
 	}
 }
 
-func TestLights() error {
+func (lc *LightController) TestLights() error {
 	// Use atomic operation to check if already running
 	if isRunning {
 		return fmt.Errorf("light test already in progress")
@@ -55,46 +108,28 @@ func TestLights() error {
 	isRunning = true
 	defer func() { isRunning = false }()
 
-	// Initialize NeoPixel
-	o := ws2811.DefaultOptions
-	o.Channels[0].GpioPin = LED_PIN
-	o.Channels[0].LedCount = NUM_LEDS
-	o.Channels[0].Brightness = BRIGHTNESS
-
-	device, err := ws2811.MakeWS2811(&o)
-	if err != nil {
-		fmt.Println("Error initializing NeoPixel:", err)
-		return err
-	}
-
-	err = device.Init()
-	if err != nil {
-		fmt.Println("Error during device initialization:", err)
-		return err
-	}
-
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
-	defer func() {
-		device.Fini()
-		fmt.Println("NeoPixel test complete. Exiting...")
-	}()
+	// defer func() {
+	// 	lc.device.Fini()
+	// 	fmt.Println("NeoPixel test complete. Exiting...")
+	// }()
 
 	fmt.Println("Starting Comprehensive NeoPixel Test")
 
-	colorFillTest(device, RED, "Red")
+	colorFillTest(lc.device, RED, "Red")
 	// colorFillTest(device, GREEN, "Green")
 	// colorFillTest(device, BLUE, "Blue")
 	// colorFillTest(device, WHITE, "White")
 
-	pixelScanTest(device, RED, "Red")
+	pixelScanTest(lc.device, RED, "Red")
 	// pixelScanTest(device, GREEN, "Green")
 	// pixelScanTest(device, BLUE, "Blue")
 	// pixelScanTest(device, WHITE, "White")
 
 	// brightnessTest(device)
 
-	turnOffStrip(device)
+	turnOffStrip(lc.device)
 
 	return nil
 }
@@ -115,7 +150,7 @@ func pixelScanTest(device *ws2811.WS2811, color [3]uint8, name string) {
 		default:
 			setPixelColor(device, i, color)
 			device.Render()
-			time.Sleep(20 * time.Millisecond)
+			time.Sleep(1 * time.Millisecond)
 			setPixelColor(device, i, BLACK)
 			device.Render()
 		}
