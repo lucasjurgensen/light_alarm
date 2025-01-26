@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 	"sync"
-
+	"time"
 	"light_alarm/light"
 )
 
@@ -29,6 +29,8 @@ var (
 	}
 	mu     sync.Mutex
 	led_mu sync.Mutex
+	lightController *light.LightController
+	alarmActive = false
 )
 
 func main() {
@@ -71,9 +73,14 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	// Prepare light controller
-	lightController := light.NewLightController(18, 380, 255)
-	lightController.Initialize()
+    // Initialize light controller
+	lightController = light.NewLightController(18, 380, 255, nil)
+	dev, err := lightController.Initialize()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error initializing light: %v\n", err)
+		os.Exit(1)
+	}
+	lightController = light.NewLightController(18, 380, 255, dev)
 
 	// API: Trigger light test
 	http.HandleFunc("/api/test-lights", func(w http.ResponseWriter, r *http.Request) {
@@ -92,8 +99,34 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 	})
 
+
+	// API: Trigger light test
+	http.HandleFunc("/api/sunrise-alarm", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+			return
+		}
+
+		go func () {
+			lightController.SunriseAlarm()
+		}()
+
+		w.WriteHeader(http.StatusOK)
+	})
+
+
 	// Load schedules from file (if exists)
 	loadFromFile("schedules.json")
+
+    ticker := time.NewTicker(5 * time.Second)
+    defer ticker.Stop()
+
+	go func() {
+		for range ticker.C {
+			checkSchedule()
+		}
+	}()
+
 
 	fmt.Println("Server started on :8080")
 	http.ListenAndServe(":8080", nil)
@@ -122,4 +155,34 @@ func loadFromFile(filename string) {
 	defer file.Close()
 	json.NewDecoder(file).Decode(&schedules)
 	fmt.Printf("JURGENSENx00 -- schedules: %v\n", schedules)
+}
+
+func checkSchedule() {
+	now := time.Now()
+	weekday := now.Weekday().String()
+	currentMinutes := now.Hour()*60 + now.Minute()
+	
+	mu.Lock()
+	defer mu.Unlock()
+	schedule, ok := schedules[weekday]
+
+	if ok && schedule.Enabled {
+		if currentMinutes >= schedule.Start && currentMinutes < schedule.End && !alarmActive{
+            go func() {
+				lightController.SunriseAlarm()
+				mu.Lock()
+				alarmActive = false
+				mu.Unlock()
+			}()
+			alarmActive = true
+		} else if currentMinutes < schedule.Start || currentMinutes >= schedule.End {
+            lightController.SetColor(light.BLACK)
+			alarmActive = false
+
+        }
+	} else {
+		lightController.SetColor(light.BLACK) // Turn off if schedule not found for the day
+		alarmActive = false
+	}
+
 }
