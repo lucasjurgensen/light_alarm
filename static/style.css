@@ -1,25 +1,148 @@
+/* General Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
+    font-family: 'Arial', sans-serif;
+    background-color: #f5f5f5;
+    color: #333;
+    padding: 20px;
 }
 
-form {
-    max-width: 400px;
-    margin: 0 auto;
-}
-
-.day {
+header {
+    text-align: center;
     margin-bottom: 20px;
 }
 
-label {
-    display: block;
+header h1 {
+    font-size: 2rem;
+    color: #4CAF50;
+}
+
+header p {
+    font-size: 1.2rem;
+    color: #555;
+}
+
+.selector-container {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.selector-container select {
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto;
+}
+
+.day-container {
+    max-width: 900px; /* Increased to fit cards better */
+    margin: 0 auto;
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-wrap: wrap; /* Allows cards to wrap to the next line */
+    justify-content: space-around; /* Distribute cards evenly */
+}
+
+.day {
+  text-align: center;
+  padding: 15px;
+  margin: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+   width: 28%; /* Adjust as needed for card width */
+  min-width: 200px; /* Minimum width for smaller screens */
+  box-sizing: border-box;
+}
+
+.day.disabled {
+    opacity: 0.6;
+    background-color: #f0f0f0;
+}
+
+
+.day h3 {
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+}
+
+.slider-container {
+    margin: 10px 0;
+    text-align: left;
+}
+
+.slider-label {
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+}
+
+input[type="range"] {
+    width: 100%;
+    margin: 5px 0;
+}
+
+.slider-value {
+    font-size: 0.9rem;
+    text-align: right;
+    color: #666;
+}
+
+.time-box {
+    font-size: 20px;
+    font-weight: bold;
     margin-bottom: 10px;
+    text-align: center;
+}
+.time-box:focus {
+    outline: none;
+    border: 1px solid #4CAF50; /* Example of adding a focus effect */
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.5); /* Example of adding a shadow focus effect */
 }
 
 button {
-    display: block;
-    margin: 20px auto;
-    padding: 10px 20px;
-    font-size: 16px;
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-top: 20px;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+.toggle-button {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+    margin: 10px 0;
+}
+.toggle-button:hover {
+    background-color: #d32f2f;
+}
+
+
+footer {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 0.9rem;
+    color: #888;
 }
