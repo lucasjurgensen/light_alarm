@@ -43,26 +43,26 @@ header p {
 }
 
 .day-container {
-    max-width: 900px; /* Increased to fit cards better */
+    max-width: 900px;
     margin: 0 auto;
     background: white;
     border-radius: 8px;
     padding: 20px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     display: flex;
-    flex-wrap: wrap; /* Allows cards to wrap to the next line */
-    justify-content: space-around; /* Distribute cards evenly */
+    flex-wrap: wrap;
+    justify-content: space-around;
 }
 
 .day {
-  text-align: center;
-  padding: 15px;
-  margin: 10px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-   width: 28%; /* Adjust as needed for card width */
-  min-width: 200px; /* Minimum width for smaller screens */
-  box-sizing: border-box;
+    text-align: center;
+    padding: 15px;
+    margin: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    width: calc(100% - 20px); /* Full width minus the margins */
+    max-width: 500px;
+    box-sizing: border-box;
 }
 
 .day.disabled {
@@ -70,43 +70,43 @@ header p {
     background-color: #f0f0f0;
 }
 
-
 .day h3 {
     font-size: 1.5rem;
-    margin-bottom: 15px;
+    margin-bottom: 5px; /* Reduced margin for tighter layout */
 }
 
-.slider-container {
-    margin: 10px 0;
-    text-align: left;
+.time-control {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
 }
 
-.slider-label {
-    font-size: 0.9rem;
-    margin-bottom: 5px;
+.time-button {
+    background-color: #ddd;
+    border: none;
+    padding: 8px 12px;
+    margin: 0 5px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 1rem;
 }
-
-input[type="range"] {
-    width: 100%;
-    margin: 5px 0;
-}
-
-.slider-value {
-    font-size: 0.9rem;
-    text-align: right;
-    color: #666;
+.time-button:hover {
+    background-color: #ccc;
 }
 
 .time-box {
     font-size: 20px;
     font-weight: bold;
-    margin-bottom: 10px;
+    margin: 0 5px 10px; /* added margin-bottom */
     text-align: center;
+    min-width: 80px;
 }
+
 .time-box:focus {
     outline: none;
-    border: 1px solid #4CAF50; /* Example of adding a focus effect */
-    box-shadow: 0 0 5px rgba(76, 175, 80, 0.5); /* Example of adding a shadow focus effect */
+    border: 1px solid #4CAF50;
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
 }
 
 button {
@@ -119,25 +119,54 @@ button {
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.3s ease;
-    margin-top: 20px;
+    margin-top: 10px; /* Reduced margin */
 }
 
 button:hover {
     background-color: #45a049;
 }
+
 .toggle-button {
-    background-color: #f44336;
-    color: white;
+    /* Switch base styles */
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+    margin: 10px auto 0; /* Adjusted margin for positioning */
+    border-radius: 34px;
+    background-color: #ccc; /* Background when disabled */
+    transition: background-color 0.3s ease;
+    position: relative;
     border: none;
-    padding: 10px 15px;
+    padding: 0px;
     cursor: pointer;
-    border-radius: 5px;
-    transition: background-color 0.3s;
-    margin: 10px 0;
+    font-size: 0px;
+    overflow: hidden;
+    text-indent: -5000px;
+}
+
+.toggle-button::before {
+    content: '';
+    position: absolute;
+    left: 2px;
+    top: 2px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: white;
+    transition: transform 0.3s ease;
+}
+
+.toggle-button.enabled {
+    background-color: #4CAF50; /* Background when enabled */
+}
+
+.toggle-button.enabled::before {
+    transform: translateX(26px); /* Move the knob to the right */
 }
 .toggle-button:hover {
-    background-color: #d32f2f;
+    background-color: #45a049;
 }
+
 
 
 footer {

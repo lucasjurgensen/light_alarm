@@ -1,36 +1,34 @@
 document.addEventListener("DOMContentLoaded", () => {
     const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-
     const dayContainer = document.getElementById("day-container");
-    let schedules = {}; // Cache schedules to avoid repeated API calls
+    let schedules = {};
 
     // Load all schedules on page load
     const loadAllSchedules = () => {
         fetch(`/api/schedules`)
             .then(response => response.json())
             .then(data => {
-                 console.log("Fetched the following from /api/schedules:", JSON.stringify(data, null, 2))
-                 schedules = {};
-                 data.forEach(schedule => {
-                   schedules[schedule.day] = schedule;
+                console.log("Fetched the following from /api/schedules:", JSON.stringify(data, null, 2))
+                schedules = {};
+                data.forEach(schedule => {
+                    schedules[schedule.day] = schedule;
                 })
-                 displayAllSchedules(schedules);
+                displayAllSchedules(schedules);
             })
-             .catch(error => {
-                 console.error("Error fetching schedules:", error);
-                  // If fetch fails, display default schedules
-                 displayAllSchedules(buildDefaultSchedules());
-                 });
+            .catch(error => {
+                console.error("Error fetching schedules:", error);
+                // If fetch fails, display default schedules
+                displayAllSchedules(buildDefaultSchedules());
+            });
     };
 
-    const buildDefaultSchedules = () => {
-        const defaultSchedules = {};
-           days.forEach(day => {
-               defaultSchedules[day] = {start: 360, end: 540, enabled: true, day: day};
-           });
-           return defaultSchedules;
-    }
-
+      const buildDefaultSchedules = () => {
+          const defaultSchedules = {};
+          days.forEach(day => {
+              defaultSchedules[day] = { start: 360, end: 540, enabled: true, day: day };
+          });
+          return defaultSchedules;
+      }
 
     const displayAllSchedules = (loadedSchedules) => {
         schedules = loadedSchedules ? loadedSchedules : buildDefaultSchedules();
@@ -41,62 +39,71 @@ document.addEventListener("DOMContentLoaded", () => {
             dayContainer.innerHTML += `
             <div class="day ${schedule.enabled ? '' : 'disabled'}" id="${day}-container">
                 <h3>${day}</h3>
-                <div class="time-box">
-                    <span id="${day}-time" contenteditable="true">${minutesToTime(schedule.start)}</span>
+                <div class="time-control">
+                    <button class="time-button minus-time" data-day="${day}">-</button>
+                    <div class="time-box">
+                        <span id="${day}-time" contenteditable="true">${minutesToTime(schedule.start)}</span>
+                    </div>
+                    <button class="time-button plus-time" data-day="${day}">+</button>
                 </div>
-               <div class="slider-container">
-                    <label class="slider-label" for="${day}-start">Time:</label>
-                    <input type="range" id="${day}-start" min="360" max="540" value="${schedule.start}">
-                    <div class="slider-value" id="${day}-start-value">${minutesToTime(schedule.start)}</div>
-               </div>
-                <button class="toggle-button" id="${day}-toggle" data-day="${day}">${schedule.enabled ? 'Turn Off' : 'Turn On'}</button>
-
+                <button class="toggle-button ${schedule.enabled ? 'enabled' : ''}" id="${day}-toggle" data-day="${day}"></button>
             </div>
             `;
         });
+          // Use event delegation
+        dayContainer.addEventListener('click', handleTimeChange);
 
         days.forEach(day => {
-            attachSliderListeners(day);
             attachTimeBoxListener(day);
             attachToggleListener(day);
         });
     };
+
+    const handleTimeChange = (event) => {
+        if (event.target.classList.contains('time-button')) {
+            const day = event.target.dataset.day;
+            const isPlus = event.target.classList.contains('plus-time');
+            const change = isPlus ? 5 : -5;
+            adjustTime(day, change);
+        }
+    }
+
+    const adjustTime = (day, change) => {
+        schedules[day].start += change;
+        if (schedules[day].start < 0) {
+            schedules[day].start = 0; //Prevent going less than 0
+        } else if(schedules[day].start > 1435){
+            schedules[day].start = 1435; //Prevent going over 23:59
+        }
+        const formattedTime = minutesToTime(schedules[day].start);
+        document.getElementById(`${day}-time`).textContent = formattedTime;
+    };
+
+
 
     const attachTimeBoxListener = (day) => {
         const timeBox = document.getElementById(`${day}-time`);
         timeBox.addEventListener("blur", () => {
             const time = timeBox.textContent;
             const minutes = timeToMinutes(time);
-            schedules[day].start = minutes; // Update the schedules object
-            document.getElementById(`${day}-start`).value = minutes;
-            document.getElementById(`${day}-start-value`).textContent = minutesToTime(minutes);
+            schedules[day].start = minutes;
+            document.getElementById(`${day}-time`).textContent = minutesToTime(minutes);
         });
         timeBox.addEventListener('keydown', function(e) {
-             if (e.key === 'Enter') {
+            if (e.key === 'Enter') {
                 e.preventDefault(); // Prevent adding a new line
-                 timeBox.blur(); // Remove focus from contentEditable
-             }
+                timeBox.blur(); // Remove focus from contentEditable
+            }
         });
     };
 
-
-    const attachSliderListeners = (day) => {
-        const slider = document.getElementById(`${day}-start`);
-        slider.addEventListener("input", (e) => {
-            const value = parseInt(e.target.value, 10);
-            schedules[day].start = value;
-            const formattedTime = minutesToTime(value);
-            document.getElementById(e.target.id + "-value").textContent = formattedTime;
-            document.getElementById(`${day}-time`).textContent = formattedTime;
-        });
-    };
 
     const attachToggleListener = (day) => {
         const toggleButton = document.getElementById(`${day}-toggle`);
         toggleButton.addEventListener("click", () => {
             schedules[day].enabled = !schedules[day].enabled;
-            toggleButton.textContent = schedules[day].enabled ? 'Turn Off' : 'Turn On';
-           document.getElementById(`${day}-container`).classList.toggle('disabled', !schedules[day].enabled);
+            toggleButton.classList.toggle('enabled', schedules[day].enabled);
+            document.getElementById(`${day}-container`).classList.toggle('disabled', !schedules[day].enabled);
         });
     }
 
@@ -107,12 +114,11 @@ document.addEventListener("DOMContentLoaded", () => {
             updatedSchedules.push({
                 day: day,
                 start: schedules[day].start,
-                end: schedules[day].start + 60, //end time is always +60 min
+                end: schedules[day].start + 60,
                 enabled: schedules[day].enabled
             });
         });
         console.log("Data immediately before fetch:", JSON.stringify(updatedSchedules));
-        // Send to server
         fetch("/api/schedules/save", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -128,7 +134,7 @@ document.addEventListener("DOMContentLoaded", () => {
             .catch(error => console.error("Error saving schedule:", error));
     });
 
-    // Save schedule
+        // Save schedule
     document.getElementById("trigger-test").addEventListener("click", () => {
         // Send to server
         fetch("/api/test-lights", {
@@ -158,6 +164,6 @@ function minutesToTime(minutes) {
 }
 
 function timeToMinutes(time) {
-  const [hours, minutes] = time.split(':').map(Number);
-  return hours * 60 + minutes;
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
 }
