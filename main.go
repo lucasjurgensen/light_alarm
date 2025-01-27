@@ -84,6 +84,7 @@ func main() {
 
 	// API: Trigger light test
 	http.HandleFunc("/api/test-lights", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("Got a request to test the lights\n")
 		if r.Method != http.MethodPost {
 			http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 			return
@@ -93,8 +94,11 @@ func main() {
 			http.Error(w, "Light test already in progress", http.StatusConflict)
 			return
 		}
+		fmt.Printf("Got a request to test the lights 1\n")
 
 		lightController.TestLights()
+
+		fmt.Printf("Got a request to test the lights 2\n")
 
 		w.WriteHeader(http.StatusOK)
 	})

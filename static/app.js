@@ -114,7 +114,7 @@ document.addEventListener("DOMContentLoaded", () => {
             updatedSchedules.push({
                 day: day,
                 start: schedules[day].start,
-                end: schedules[day].start + 60,
+                end: schedules[day].start + 30,
                 enabled: schedules[day].enabled
             });
         });

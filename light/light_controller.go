@@ -70,17 +70,20 @@ func (lc *LightController) SunriseAlarm() error {
 	fmt.Println("Starting alarm!")
 
 	// Set the color to white
+    lc.SetColor(WHITE)
     lc.device.SetBrightness(0, 0)
-	lc.SetColor(WHITE)
+    lc.device.Render()
 
 	for i := 25; i <= 250; i += 25 {
 		fmt.Printf("Set brightness to %d\n", i)
 		lc.device.SetBrightness(0, i)
-		lc.SetColor(WHITE)
-		time.Sleep(2 * time.Second)
+        lc.device.Render()
+		time.Sleep(1 * time.Minute)
 	}
-	time.Sleep(10 * time.Minute)
+    fmt.Printf("Staying bright for 20 minutes\n")
+	time.Sleep(20 * time.Minute)
     lc.device.SetBrightness(0, 0)
+    lc.device.Render()
 	fmt.Println("All done!")
 	return nil
 }
@@ -136,6 +139,13 @@ func (lc *LightController) TestLights() error {
     // }()
 
     fmt.Println("Starting Comprehensive NeoPixel Test")
+
+    // Set the color to white
+    lc.SetColor(WHITE)
+    lc.device.SetBrightness(0, 255)
+    lc.device.Render()
+
+    time.Sleep(10 * time.Second)
 
     colorFillTest(lc.device, RED, "Red")
     // colorFillTest(device, GREEN, "Green")
