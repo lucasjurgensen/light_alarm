@@ -8,6 +8,8 @@ import (
 	"syscall"
 	"time"
 
+    "light_alarm/weather"
+
 	ws2811 "github.com/rpi-ws281x/rpi-ws281x-go"
 )
 
@@ -66,24 +68,52 @@ func (lc *LightController) Initialize() (*ws2811.WS2811, error) {
     return dev, nil
 }
 
-func (lc *LightController) SunriseAlarm() error {
+func (lc *LightController) SunriseAlarm(stopChan chan struct{}) error {
 	fmt.Println("Starting alarm!")
 
 	// Set the color to white
-    lc.SetColor(WHITE)
-    lc.device.SetBrightness(0, 0)
-    lc.device.Render()
+	lc.SetAlarmColor()
+	lc.device.SetBrightness(0, 0)
+	lc.device.Render()
 
+	// Gradual brightness increase over 10 minutes
 	for i := 25; i <= 250; i += 25 {
 		fmt.Printf("Set brightness to %d\n", i)
 		lc.device.SetBrightness(0, i)
-        lc.device.Render()
-		time.Sleep(1 * time.Minute)
+		lc.device.Render()
+
+		// Check every second for cancellation
+		for j := 0; j < 60; j++ {
+			select {
+			case <-stopChan:
+				fmt.Println("Alarm stopped early!")
+				lc.device.SetBrightness(0, 0) // Turn off lights
+				lc.device.Render()
+				return nil
+			case <-time.After(1 * time.Second): // Check every second
+				// Continue waiting
+			}
+		}
 	}
-    fmt.Printf("Staying bright for 20 minutes\n")
-	time.Sleep(20 * time.Minute)
-    lc.device.SetBrightness(0, 0)
-    lc.device.Render()
+
+	// Stay bright for 20 minutes, but check for stop signal
+	fmt.Println("Staying bright for 20 minutes")
+
+	for j := 0; j < 1200; j++ { // 20 minutes = 1200 seconds
+		select {
+		case <-stopChan:
+			fmt.Println("Alarm stopped early!")
+			lc.device.SetBrightness(0, 0) // Turn off lights
+			lc.device.Render()
+			return nil
+		case <-time.After(1 * time.Second):
+			// Continue waiting
+		}
+	}
+
+	// Turn off the light at the end
+	lc.device.SetBrightness(0, 0)
+	lc.device.Render()
 	fmt.Println("All done!")
 	return nil
 }
@@ -96,6 +126,27 @@ func (lc *LightController) SetColor(color [3]uint8) error {
         colorVal := uint32(color[0])<<16 | uint32(color[1])<<8 | uint32(color[2])
         lc.device.Leds(0)[i] = colorVal
     }
+    return lc.device.Render()
+}
+
+func (lc *LightController) SetAlarmColor() error {
+    for i := 0; i < lc.numLeds; i++ {
+        colorVal := uint32(255)<<16 | uint32(255)<<8 | uint32(255) // White color
+        lc.device.Leds(0)[i] = colorVal
+    }
+
+    go func() { // Run rain probability check asynchronously
+        rainProbability := weather.GetMaxRainProbability()
+        if rainProbability > 0 {
+            blueColor := uint32(0)<<16 | uint32(0)<<8 | uint32(255)
+            startIdx := max(lc.numLeds-20, 0)
+            for i := startIdx; i < lc.numLeds; i++ {
+                lc.device.Leds(0)[i] = blueColor
+            }
+            lc.device.Render()
+        }
+    }()
+
     return lc.device.Render()
 }
 

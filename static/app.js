@@ -114,7 +114,7 @@ document.addEventListener("DOMContentLoaded", () => {
             updatedSchedules.push({
                 day: day,
                 start: schedules[day].start,
-                end: schedules[day].start + 30,
+                end: schedules[day].start + 1,
                 enabled: schedules[day].enabled
             });
         });
@@ -149,6 +149,22 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             })
             .catch(error => console.error("Error triggering light test:", error));
+    });
+
+    document.getElementById("stop-alarm").addEventListener("click", () => {
+        // Send to server
+        fetch("/api/stop-alarm", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+        })
+            .then(response => {
+                if (response.ok) {
+                    alert(`Stopped alarm!`);
+                } else {
+                    alert("Failed to stop alarm.");
+                }
+            })
+            .catch(error => console.error("Error stopping alarm:", error));
     });
 
 

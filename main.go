@@ -31,6 +31,7 @@ var (
 	led_mu sync.Mutex
 	lightController *light.LightController
 	alarmActive = false
+	stopAlarmChan = make(chan struct{})
 )
 
 func main() {
@@ -112,9 +113,24 @@ func main() {
 		}
 
 		go func () {
-			lightController.SunriseAlarm()
+			lightController.SunriseAlarm(stopAlarmChan)
 		}()
 
+		w.WriteHeader(http.StatusOK)
+	})
+
+	http.HandleFunc("/api/stop-alarm", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+			return
+		}
+	
+		fmt.Println("Stopping alarm via API")
+		select {
+		case stopAlarmChan <- struct{}{}: // Send stop signal
+		default: // Avoid blocking if no receiver is waiting
+		}
+	
 		w.WriteHeader(http.StatusOK)
 	})
 
@@ -173,7 +189,7 @@ func checkSchedule() {
 	if ok && schedule.Enabled {
 		if currentMinutes >= schedule.Start && currentMinutes < schedule.End && !alarmActive{
             go func() {
-				lightController.SunriseAlarm()
+				lightController.SunriseAlarm(stopAlarmChan)
 				mu.Lock()
 				alarmActive = false
 				mu.Unlock()
