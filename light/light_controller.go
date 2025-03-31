@@ -7,6 +7,7 @@ import (
 	"sync"
 	"syscall"
 	"time"
+    "math"
 
     "light_alarm/weather"
 
@@ -139,7 +140,7 @@ func (lc *LightController) SetAlarmColor() error {
         rainProbability := weather.GetMaxRainProbability()
         if rainProbability > 0 {
             blueColor := uint32(0)<<16 | uint32(0)<<8 | uint32(255)
-            startIdx := max(lc.numLeds-20, 0)
+            startIdx := int(math.Max(float64(lc.numLeds-20), 0.0))
             for i := startIdx; i < lc.numLeds; i++ {
                 lc.device.Leds(0)[i] = blueColor
             }
